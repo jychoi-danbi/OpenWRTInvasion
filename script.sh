@@ -9,7 +9,7 @@ exploit() {
 
     echo "Done download Danbi FW...FW update start..."
 
-    sysupgrade -T /tmp/danbi_fw.bin
+    mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
 }
 
 <<Comment
