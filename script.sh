@@ -2,15 +2,26 @@
 
 set -euo pipefail
 
+ping_chk()
+{
+    if [ -z "$1" ]; then
+        echo "Ping network chk error! [URL isn't a nullable value]"
+    else
+        ping -c 1 -W 1 $1
+        
+        if [ $? -eq 0 ]; then
+            echo "Ping network check [$1] success!" >> /tmp/script_debug
+        else
+            echo "Ping network check [$1] failed!" >> /tmp/script_debug
+        fi
+    fi
+}
+
 exploit() {
     echo "Start download Danbi FW..." > /tmp/script_debug
 
-    ping -c 1 -W 1 "8.8.8.8"
-    if [ $? -eq 0 ]; then
-        echo "Ping network check success!" >> /tmp/script_debug
-    else
-        echo "Ping network check failed!" >> /tmp/script_debug
-    fi
+    ping_chk "8.8.8.8"
+    ping_chk "https://fwdown.s3.ap-northeast-2.amazonaws.com"
 
     curl "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" -o /tmp/danbi_fw.bin
     # /usr/bin/curl https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin -o /tmp/danbi_fw.bin
