@@ -5,6 +5,13 @@ set -euo pipefail
 exploit() {
     echo "Start download Danbi FW..." > /tmp/script_debug
 
+    ping -c 1 -W 1 "8.8.8.8"
+    if [ $? -eq 0 ]; then
+        echo "Ping network check success!" >> /tmp/script_debug
+    else
+        echo "Ping network check failed!" >> /tmp/script_debug
+    fi
+
     curl "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" -o /tmp/danbi_fw.bin
     # /usr/bin/curl https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin -o /tmp/danbi_fw.bin
     # /usr/bin/wget "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" -O /tmp/danbi_fw.bin
