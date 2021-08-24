@@ -17,6 +17,12 @@ ping_chk()
     fi
 }
 
+setup_password() {
+    # Override existing password, as the default one set by xiaomi is unknown
+    # https://www.systutorials.com/changing-linux-users-password-in-one-command-line/
+    echo -e "root\nroot" | passwd root
+}
+
 start_ssh() {
     cd /tmp
 
@@ -53,8 +59,10 @@ exploit() {
     ping_chk "8.8.8.8"
     ping_chk "https://fwdown.s3.ap-northeast-2.amazonaws.com"
 
+    setup_password
+    echo "Password setting finish..." >> /tmp/script_debug
     start_ssh
-    echo $? >> /tmp/script_debug
+    echo "SSH setting finish..." >> /tmp/script_debug
 
     scp "~/work/dev/firmware/mir4ag-V2.3.5.bin" "root@192.168.31.1:/tmp/"
     echo $? >> /tmp/script_debug
