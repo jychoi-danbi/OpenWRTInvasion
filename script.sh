@@ -23,16 +23,14 @@ exploit() {
     ping_chk "8.8.8.8"
     ping_chk "https://fwdown.s3.ap-northeast-2.amazonaws.com"
 
-    curl "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" -o /tmp/danbi_fw.bin
-    # /usr/bin/curl https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin -o /tmp/danbi_fw.bin
-    # /usr/bin/wget "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" -O /tmp/danbi_fw.bin
-    # echo "FW download curl return value : $?" >> /tmp/script_debug
+    scp "~/work/dev/firmware/mir4ag-V2.3.5.bin" "root@192.168.31.1:/tmp/"
     echo $? >> /tmp/script_debug
+
+    echo "$(ssh -i /lib/danbi_router.dbear root@192.168.9.1 'ls -al /tmp/mir4ag-V2.3.5.bin')" >> /tmp/script_debug
 
     echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
 
     mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
-    # echo "FW update mtd return value : $?" >> /tmp/script_debug
     echo $? >> /tmp/script_debug
 }
 
