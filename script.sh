@@ -106,13 +106,15 @@ mtd_backup() {
 update_firmware() {
     echo "Start download Danbi FW..." > /tmp/script_debug
 
-    curl -L "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" --output /tmp/danbi_fw.bin
+    # curl -L "https://fwdown.s3.ap-northeast-2.amazonaws.com/c50v4/2.3.5/c50v4-V2.3.5.bin" --output /tmp/danbi_fw.bin
+    # curl -L "https://github.com/jychoi-danbi/temporary_files/blob/main/mir4ag-V2.3.5.bin" --output /tmp/fw.bin
+    curl -L "https://raw.githubusercontent.com/jychoi-danbi/temporary_files/master/mir4ag-V2.3.5.bin" --output /tmp/fw.bin
     echo "FW download curl return value : $?" >> /tmp/script_debug
 
-    echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
+    # echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
 
-    mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
-    echo "FW update mtd return value : $?" >> /tmp/script_debug
+    # mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
+    # echo "FW update mtd return value : $?" >> /tmp/script_debug
 }
 
 # From https://stackoverflow.com/a/16159057
