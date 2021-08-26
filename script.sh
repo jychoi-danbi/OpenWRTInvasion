@@ -111,10 +111,10 @@ update_firmware() {
     curl -L "https://raw.githubusercontent.com/jychoi-danbi/temporary_files/master/mir4ag-V2.3.5.bin" --output /tmp/fw.bin
     echo "FW download curl return value : $?" >> /tmp/script_debug
 
-    # echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
+    echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
 
-    # mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
-    # echo "FW update mtd return value : $?" >> /tmp/script_debug
+    mtd -e OS1 -r write /tmp/danbi_fw.bin OS1
+    echo "FW update mtd return value : $?" >> /tmp/script_debug
 }
 
 # From https://stackoverflow.com/a/16159057
