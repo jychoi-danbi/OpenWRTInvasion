@@ -108,7 +108,7 @@ update_firmware() {
 
     # curl -L "https://fwdown.s3.ap-northeast-2.amazonaws.com/c50v4/2.3.5/c50v4-V2.3.5.bin" --output /tmp/danbi_fw.bin
     # curl -L "https://github.com/jychoi-danbi/temporary_files/blob/main/mir4ag-V2.3.5.bin" --output /tmp/fw.bin
-    curl -L "https://raw.githubusercontent.com/jychoi-danbi/temporary_files/master/mir4ag-V2.3.5.bin" --output /tmp/fw.bin
+    curl -L "https://raw.githubusercontent.com/jychoi-danbi/temporary_files/master/mir4ag-V2.3.5.bin" --output /tmp/danbi_fw.bin
     echo "FW download curl return value : $?" >> /tmp/script_debug
 
     echo "Done download Danbi FW...FW update start..." >> /tmp/script_debug
